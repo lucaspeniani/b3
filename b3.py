@@ -5,8 +5,18 @@ import numpy as np
 
 # Função para analisar o desempenho das ações
 def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
-    # O mesmo código que você forneceu aqui...
-    # ...
+    # Busca dados históricos das ações
+    data = yf.download(ticker, start=start_date, end=end_date)
+
+    # Calcula a variação percentual diária
+    data['Daily Change'] = data['Close'].pct_change()
+
+    # Filtra os dias em que a queda foi dentro do intervalo especificado
+    drop_mask = (data['Daily Change'] <= -opening_drop_range[0]) & (data['Daily Change'] >= -opening_drop_range[1])
+    filtered_data = data[drop_mask]
+
+    # Retorna os dados filtrados (ou qualquer outra métrica desejada)
+    return filtered_data
 
 # Definindo a interface do usuário no Streamlit
 def main():
@@ -22,7 +32,6 @@ def main():
 
     # Botão para executar a análise
     if st.button("Analisar Desempenho"):
-        # Lista de tickers (pode ser modificada ou obtida de alguma outra forma)
         tickers = ["AAPL", "MSFT", "GOOG"]  # Use os tickers desejados aqui
         tickers_b3 = [ticker + ".SA" for ticker in tickers]
 
@@ -32,7 +41,7 @@ def main():
             final_performance_results.extend(ticker_performance)
 
         performance_df = pd.DataFrame(final_performance_results)
-        performance_df.sort_values(by=['Ticker', 'Average Positive Difference'], ascending=[True, False], inplace=True)
+        performance_df.sort_values(by=['Ticker', 'Daily Change'], ascending=[True, False], inplace=True)
 
         # Exibe o DataFrame
         st.dataframe(performance_df)
