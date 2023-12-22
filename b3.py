@@ -8,31 +8,38 @@ def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
     performance_list = []
 
     for opening_drop_percentage in np.arange(opening_drop_range[0], opening_drop_range[1], 0.1):
-        # Carrega dados históricos da ação entre as datas especificadas
-        stock_data = yf.download(ticker, start=start_date, end=end_date)
+        try:
+            # Carrega dados históricos da ação entre as datas especificadas
+            stock_data = yf.download(ticker, start=start_date, end=end_date)
 
-        # Calcula o preço de abertura ajustado pela porcentagem de queda
-        stock_data['Adjusted Opening'] = stock_data['Close'].shift(1) * (1 - opening_drop_percentage / 100)
+            # Verifica se há dados suficientes para análise
+            if stock_data.empty:
+                continue
 
-        # Calcula métricas
-        higher_count = (stock_data['Close'] > stock_data['Adjusted Opening']).sum()
-        lower_count = (stock_data['Close'] < stock_data['Adjusted Opening']).sum()
-        positive_differences = stock_data[stock_data['Close'] > stock_data['Adjusted Opening']]['Close'] / stock_data['Adjusted Opening'] - 1
-        average_positive_difference = positive_differences.mean() * 100  # Convertendo para porcentagem
-        total_days = len(stock_data)
-        higher_percentage = (higher_count / total_days) * 100 if total_days > 0 else 0
-        lower_percentage = (lower_count / total_days) * 100 if total_days > 0 else 0
+            # Calcula o preço de abertura ajustado pela porcentagem de queda
+            stock_data['Adjusted Opening'] = stock_data['Close'].shift(1) * (1 - opening_drop_percentage / 100)
 
-        # Adiciona os resultados à lista
-        performance_list.append({
-            'Ticker': ticker,
-            'Drop Percentage Range': f"{opening_drop_percentage:.1f}%",
-            'Higher Count': higher_count,
-            'Lower Count': lower_count,
-            'Higher Percentage': higher_percentage,
-            'Lower Percentage': lower_percentage,
-            'Average Positive Difference': average_positive_difference
-        })
+            # Calcula métricas
+            higher_count = (stock_data['Close'] > stock_data['Adjusted Opening']).sum()
+            lower_count = (stock_data['Close'] < stock_data['Adjusted Opening']).sum()
+            positive_differences = stock_data[stock_data['Close'] > stock_data['Adjusted Opening']]['Close'] / stock_data['Adjusted Opening'] - 1
+            average_positive_difference = positive_differences.mean() * 100  # Convertendo para porcentagem
+            total_days = len(stock_data)
+            higher_percentage = (higher_count / total_days) * 100 if total_days > 0 else 0
+            lower_percentage = (lower_count / total_days) * 100 if total_days > 0 else 0
+
+            # Adiciona os resultados à lista
+            performance_list.append({
+                'Ticker': ticker,
+                'Drop Percentage Range': f"{opening_drop_percentage:.1f}%",
+                'Higher Count': higher_count,
+                'Lower Count': lower_count,
+                'Higher Percentage': higher_percentage,
+                'Lower Percentage': lower_percentage,
+                'Average Positive Difference': average_positive_difference
+            })
+        except Exception as e:
+            st.error(f"Erro ao processar {ticker}: {e}")
 
     return performance_list
 
@@ -84,6 +91,7 @@ tickers = [
     "CEPE3", "CALI4", "SNSY6", "CASN4", "EMAE3", "BPAR3", "APTI4", "VSPT3", "MTIG3", "FIGE4", "LUXM3", "TKNO3",
     "COCE6", "MGEL3", "CTSA8", "MMAQ4"
 ]
+
 # Adiciona o sufixo '.SA' necessário para o yfinance
 tickers_b3 = [ticker + ".SA" for ticker in tickers]
 
@@ -102,9 +110,11 @@ if st.button("Analisar"):
         ticker_performance = analyze_stock_performance(ticker, start_date, end_date, opening_drop_range)
         final_performance_results.extend(ticker_performance)
 
-    performance_df = pd.DataFrame(final_performance_results)
-    performance_df.sort_values(by=['Ticker', 'Average Positive Difference'], ascending=[True, False], inplace=True)
-    
-    st.dataframe(performance_df)
+    if final_performance_results:
+        performance_df = pd.DataFrame(final_performance_results)
+        performance_df.sort_values(by=['Ticker', 'Average Positive Difference'], ascending=[True, False], inplace=True)
+        st.dataframe(performance_df)
+    else:
+        st.error("Nenhum dado foi retornado para os tickers selecionados.")
 
 st.write("Desenvolvido por [Seu Nome ou Organização]")
