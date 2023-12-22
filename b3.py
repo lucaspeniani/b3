@@ -3,53 +3,49 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 
-# Função para analisar o desempenho das ações
-def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
+def analyze_stock_performance(ticker, start_date, end_date):
     # Busca dados históricos das ações
     data = yf.download(ticker, start=start_date, end=end_date)
 
-    # Calcula a variação percentual diária
-    data['Daily Change'] = data['Close'].pct_change()
+    # Calcula a variação percentual na abertura
+    data['Open Change %'] = ((data['Open'] - data['Close'].shift(1)) / data['Close'].shift(1)) * 100
 
-    # Filtra os dias em que a queda foi dentro do intervalo especificado
-    drop_mask = (data['Daily Change'] <= -opening_drop_range[0]/100) & (data['Daily Change'] >= -opening_drop_range[1]/100)
-    filtered_data = data[drop_mask]
+    # Calcula a média da variação
+    avg_open_change = data['Open Change %'].mean()
 
-    # Adiciona uma coluna com o ticker
-    filtered_data['Ticker'] = ticker
+    # Calcula contagens e porcentagens
+    count_higher = data[data['Open Change %'] > avg_open_change].shape[0]
+    count_lower = data[data['Open Change %'] < avg_open_change].shape[0]
+    percent_higher = (count_higher / data.shape[0]) * 100
+    percent_lower = (count_lower / data.shape[0]) * 100
 
-    # Retorna os dados filtrados
-    return filtered_data
+    # Calcula a diferença positiva média
+    positive_differences = data[data['Open Change %'] > 0]['Open Change %']
+    avg_positive_difference = positive_differences.mean()
 
-# Definindo a interface do usuário no Streamlit
+    return {
+        'Código': ticker,
+        'Porcentagem de queda na abertura': avg_open_change,
+        'Contagem Maior': count_higher,
+        'Contagem Menor': count_lower,
+        'Porcentagem Maior': percent_higher,
+        'Porcentagem Menor': percent_lower,
+        'Diferença Positiva Média': avg_positive_difference
+    }
+
 def main():
     st.title("Análise de Desempenho de Ações")
 
     start_date = st.date_input("Data inicial", value=pd.to_datetime("2023-12-01"))
     end_date = st.date_input("Data final", value=pd.to_datetime("2023-12-21"))
 
-    min_drop = st.number_input("Porcentagem de queda mínima", min_value=0.0, max_value=100.0, value=0.10)
-    max_drop = st.number_input("Porcentagem de queda máxima", min_value=0.0, max_value=100.0, value=0.50)
-
     if st.button("Analisar Desempenho"):
-        # Insira sua lista de tickers aqui
-        tickers = [
-            "MGLU3", "HAPV3", "AMER3", "ABEV3", "PETR4", "BBDC4", "B3SA3", "RAIZ4", "ITUB4", "PETZ3", "VALE3", "CIEL3",
-            # ... (inclua todos os tickers da lista fornecida)
-        ]
+        # Lista de tickers
+        tickers = ["WEGE3.SA", "PETR4.SA", "VALE3.SA"] # Adicione todos os tickers
 
-        final_performance_results = []
+        results = [analyze_stock_performance(ticker, start_date, end_date) for ticker in tickers]
 
-        for ticker in tickers:
-            ticker_performance = analyze_stock_performance(ticker + ".SA", start_date, end_date, (min_drop, max_drop))
-            final_performance_results.append(ticker_performance)
-
-        # Concatena os resultados em um único DataFrame
-        performance_df = pd.concat(final_performance_results)
-
-        # Ordena o DataFrame
-        performance_df.sort_values(by=['Ticker', 'Daily Change'], ascending=[True, False], inplace=True)
-
+        performance_df = pd.DataFrame(results)
         st.dataframe(performance_df)
 
 if __name__ == "__main__":
