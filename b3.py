@@ -8,35 +8,38 @@ def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
     performance_list = []
 
     for opening_drop_percentage in np.arange(opening_drop_range[0], opening_drop_range[1], 0.1):
-        # Carrega dados históricos da ação entre as datas especificadas
-        stock_data = yf.download(ticker, start=start_date, end=end_date)
+        try:
+            # Carrega dados históricos da ação entre as datas especificadas
+            stock_data = yf.download(ticker, start=start_date, end=end_date)
 
-        # Verifica se há dados suficientes para análise
-        if stock_data.empty:
-            continue
+            # Verifica se há dados suficientes para análise
+            if stock_data.empty:
+                continue
 
-        # Calcula o preço de abertura ajustado pela porcentagem de queda
-        stock_data['Adjusted Opening'] = stock_data['Close'].shift(1) * (1 - opening_drop_percentage / 100)
+            # Calcula o preço de abertura ajustado pela porcentagem de queda
+            stock_data['Adjusted Opening'] = stock_data['Close'].shift(1) * (1 - opening_drop_percentage / 100)
 
-        # Calcula métricas
-        higher_count = (stock_data['Close'] > stock_data['Adjusted Opening']).sum()
-        lower_count = (stock_data['Close'] < stock_data['Adjusted Opening']).sum()
-        positive_differences = stock_data[stock_data['Close'] > stock_data['Adjusted Opening']]['Close'] / stock_data['Adjusted Opening'] - 1
-        average_positive_difference = positive_differences.mean() * 100  # Convertendo para porcentagem
-        total_days = len(stock_data)
-        higher_percentage = (higher_count / total_days) * 100 if total_days > 0 else 0
-        lower_percentage = (lower_count / total_days) * 100 if total_days > 0 else 0
+            # Calcula métricas
+            higher_count = (stock_data['Close'] > stock_data['Adjusted Opening']).sum()
+            lower_count = (stock_data['Close'] < stock_data['Adjusted Opening']).sum()
+            positive_differences = stock_data[stock_data['Close'] > stock_data['Adjusted Opening']]['Close'] / stock_data['Adjusted Opening'] - 1
+            average_positive_difference = positive_differences.mean() * 100  # Convertendo para porcentagem
+            total_days = len(stock_data)
+            higher_percentage = (higher_count / total_days) * 100 if total_days > 0 else 0
+            lower_percentage = (lower_count / total_days) * 100 if total_days > 0 else 0
 
-        # Adiciona os resultados à lista
-        performance_list.append({
-            'Ticker': ticker,
-            'Drop Percentage Range': f"{opening_drop_percentage:.1f}%",
-            'Higher Count': higher_count,
-            'Lower Count': lower_count,
-            'Higher Percentage': higher_percentage,
-            'Lower Percentage': lower_percentage,
-            'Average Positive Difference': average_positive_difference
-        })
+            # Adiciona os resultados à lista
+            performance_list.append({
+                'Ticker': ticker,
+                'Drop Percentage Range': f"{opening_drop_percentage:.1f}%",
+                'Higher Count': higher_count,
+                'Lower Count': lower_count,
+                'Higher Percentage': higher_percentage,
+                'Lower Percentage': lower_percentage,
+                'Average Positive Difference': average_positive_difference
+            })
+        except Exception as e:
+            st.error(f"Erro ao processar {ticker}: {e}")
 
     return performance_list
 
@@ -89,43 +92,57 @@ tickers = [
     "COCE6", "MGEL3", "CTSA8", "MMAQ4"
 ]
 
-# Configuração do aplicativo Streamlit
+# Adiciona o sufixo '.SA' necessário para o yfinance
+tickers_b3 = [ticker + ".SA" for ticker in tickers]
+
+# Interface do Streamlit
 st.title("Análise de Desempenho de Ações")
-st.sidebar.header("Configurações")
 
-# Parâmetros para a análise
-start_date = st.sidebar.date_input("Data de Início", pd.to_datetime("2023-12-01"))
-end_date = st.sidebar.date_input("Data de Término", pd.to_datetime("2023-12-21"))
-opening_drop_range = st.sidebar.slider("Faixa de Queda (%)", 1, 10, (1, 10))
-
-# Armazena os resultados finais
-final_performance_results = []
-
-# Executa a análise para cada ticker
-for ticker in tickers_b3:
-    ticker_performance = analyze_stock_performance(ticker, start_date, end_date, opening_drop_range)
-    final_performance_results.extend(ticker_performance)
+start_date = st.date_input("Data de Início", value=pd.to_datetime("2023-12-01"))
+end_date = st.date_input("Data de Fim", value=pd.to_datetime("2023-12-21"))
+opening_drop_start = st.number_input("Queda Inicial (%)", min_value=0.1, max_value=100.0, value=0.10, step=0.1)
+opening_drop_end = st.number_input("Queda Final (%)", min_value=0.1, max_value=100.0, value=0.50, step=0.1)
+opening_drop_range = (opening_drop_start, opening_drop_end)
 
 if st.button("Analisar"):
+    final_performance_results = []
+    progress_bar = st.progress(0)
+    total_tickers = len(tickers_b3)
+
+    for i, ticker in enumerate(tickers_b3):
+        ticker_performance = analyze_stock_performance(ticker, start_date, end_date, opening_drop_range)
+        final_performance_results.extend(ticker_performance)
+        progress_bar.progress((i + 1) / total_tickers)
+
     if final_performance_results:
         performance_df = pd.DataFrame(final_performance_results)
         performance_df.sort_values(by=['Ticker', 'Average Positive Difference'], ascending=[True, False], inplace=True)
 
         # Filtros
-        st.sidebar.header("Filtros")
+        st.sidebar.title("Filtros")
+        num_best_stocks = st.sidebar.slider("Número de Melhores Ações", 1, 20, 5)
+        selected_ticker = st.sidebar.selectbox("Selecionar Ticker", tickers_b3)
+        sort_by = st.sidebar.selectbox("Classificar por", performance_df.columns)
+        ascending = st.sidebar.checkbox("Ordem Crescente", True)
 
-        # Filtro por Ticker
-        unique_tickers = sorted(performance_df['Ticker'].unique())
-        selected_tickers = st.sidebar.multiselect('Selecione os Tickers', unique_tickers, default=unique_tickers)
+        # Aplicar filtros
+        best_stocks_df = performance_df.nlargest(num_best_stocks, 'Average Positive Difference')
+        selected_stock_df = performance_df[performance_df['Ticker'] == selected_ticker]
+        sorted_df = performance_df.sort_values(by=[sort_by], ascending=[ascending])
 
-        # Filtro por Faixa de Queda
-        min_drop, max_drop = st.sidebar.slider("Selecione a Faixa de Queda (%)", 0, 100, (0, 100))
+        # Exibir tabela com base nos filtros
+        if num_best_stocks > 0:
+            st.subheader(f"{num_best_stocks} Melhores Ações:")
+            st.dataframe(best_stocks_df)
+        if selected_ticker:
+            st.subheader(f"Desempenho para {selected_ticker}:")
+            st.dataframe(selected_stock_df)
+        st.subheader(f"Classificado por {sort_by}:")
+        st.dataframe(sorted_df)
 
-        # Aplicando filtros
-        filtered_data = performance_df[(performance_df['Ticker'].isin(selected_tickers)) &
-                                       (performance_df['Drop Percentage Range'].str.rstrip('%').astype('float') >= min_drop) &
-                                       (performance_df['Drop Percentage Range'].str.rstrip('%').astype('float') <= max_drop)]
-
-        st.dataframe(filtered_data)
     else:
         st.error("Nenhum dado foi retornado para os tickers selecionados.")
+
+    progress_bar.empty()
+
+st.write("Desenvolvido por [Seu Nome ou Organização]")
