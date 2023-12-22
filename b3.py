@@ -145,4 +145,4 @@ if st.button("Analisar"):
 
     progress_bar.empty()
 
-st.write("Desenvolvido por [Seu Nome ou Organização]")
+st.write("Desenvolvido por Sentinel")
