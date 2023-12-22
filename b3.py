@@ -64,7 +64,14 @@ def main():
             final_performance_results.extend(ticker_performance)
 
         performance_df = pd.DataFrame(final_performance_results)
-        performance_df.sort_values(by=['Ticker', 'Average Positive Difference'], ascending=[True, False], inplace=True)
+
+        # Diagnóstico: Imprimir as colunas do DataFrame
+        st.write("Colunas do DataFrame:", performance_df.columns)
+
+        try:
+            performance_df.sort_values(by=['Ticker', 'Average Positive Difference'], ascending=[True, False], inplace=True)
+        except KeyError as e:
+            st.error(f"Erro ao ordenar o DataFrame: {e}")
 
         # Exibe o DataFrame
         st.dataframe(performance_df)
