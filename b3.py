@@ -55,7 +55,7 @@ def main():
     # Botão para executar a análise
     if st.button("Analisar Desempenho"):
         # Lista de tickers (pode ser modificada ou obtida de alguma outra forma)
-        tickers = ["AAPL", "MSFT", "GOOG"]  # Use os tickers desejados aqui
+        tickers = ["WEGE3", "ITSA4"]  # Use os tickers desejados aqui
         tickers_b3 = [ticker + ".SA" for ticker in tickers]
 
         final_performance_results = []
