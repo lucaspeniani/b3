@@ -106,9 +106,13 @@ opening_drop_range = (opening_drop_start, opening_drop_end)
 
 if st.button("Analisar"):
     final_performance_results = []
-    for ticker in tickers_b3:
+    progress_bar = st.progress(0)
+    total_tickers = len(tickers_b3)
+
+    for i, ticker in enumerate(tickers_b3):
         ticker_performance = analyze_stock_performance(ticker, start_date, end_date, opening_drop_range)
         final_performance_results.extend(ticker_performance)
+        progress_bar.progress((i + 1) / total_tickers)
 
     if final_performance_results:
         performance_df = pd.DataFrame(final_performance_results)
@@ -116,5 +120,7 @@ if st.button("Analisar"):
         st.dataframe(performance_df)
     else:
         st.error("Nenhum dado foi retornado para os tickers selecionados.")
+
+    progress_bar.empty()
 
 st.write("Desenvolvido por [Seu Nome ou Organização]")
