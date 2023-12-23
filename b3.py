@@ -22,21 +22,20 @@ def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
             # Calcula métricas
             higher_count = (stock_data['Close'] > stock_data['Adjusted Opening']).sum()
             lower_count = (stock_data['Close'] < stock_data['Adjusted Opening']).sum()
-            positive_differences = stock_data[stock_data['Close'] > stock_data['Adjusted Opening']]['Close'] / stock_data['Adjusted Opening'] - 1
-            average_positive_difference = positive_differences.mean() * 100  # Convertendo para porcentagem
             total_days = len(stock_data)
             higher_percentage = (higher_count / total_days) * 100 if total_days > 0 else 0
             lower_percentage = (lower_count / total_days) * 100 if total_days > 0 else 0
+            average_open_close_percentage = ((stock_data['Close'] / stock_data['Adjusted Opening'] - 1).mean()) * 100
 
             # Adiciona os resultados à lista
             performance_list.append({
                 'Ticker': ticker,
-                'Drop Percentage Range': f"{opening_drop_percentage:.1f}%",
+                'Drop Percentage': f"{opening_drop_percentage:.1f}%",
                 'Higher Count': higher_count,
                 'Lower Count': lower_count,
-                'Higher Percentage': higher_percentage,
-                'Lower Percentage': lower_percentage,
-                'Average Positive Difference': average_positive_difference
+                'Higher Percentage': f"{higher_percentage:.2f}%",
+                'Lower Percentage': f"{lower_percentage:.2f}%",
+                'Avg Open-Close %': f"{average_open_close_percentage:.2f}%"
             })
         except Exception as e:
             st.error(f"Erro ao processar {ticker}: {e}")
@@ -116,7 +115,7 @@ if st.button("Analisar"):
 
     if final_performance_results:
         performance_df = pd.DataFrame(final_performance_results)
-        performance_df.sort_values(by=['Ticker', 'Average Positive Difference'], ascending=[True, False], inplace=True)
+        performance_df.sort_values(by=['Ticker', 'Avg Open-Close %'], ascending=[True, False], inplace=True)
 
         # Filtros
         st.sidebar.title("Filtros")
@@ -126,7 +125,7 @@ if st.button("Analisar"):
         ascending = st.sidebar.checkbox("Ordem Crescente", True)
 
         # Aplicar filtros
-        best_stocks_df = performance_df.nlargest(num_best_stocks, 'Average Positive Difference')
+        best_stocks_df = performance_df.nlargest(num_best_stocks, 'Avg Open-Close %')
         selected_stock_df = performance_df[performance_df['Ticker'] == selected_ticker]
         sorted_df = performance_df.sort_values(by=[sort_by], ascending=[ascending])
 
@@ -145,4 +144,4 @@ if st.button("Analisar"):
 
     progress_bar.empty()
 
-st.write("Desenvolvido por Sentinel")
+st.write("Desenvolvido por [Seu Nome ou Organização]")
