@@ -22,10 +22,9 @@ def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
             # Calcula métricas
             higher_count = (stock_data['Close'] > stock_data['Adjusted Opening']).sum()
             lower_count = (stock_data['Close'] < stock_data['Adjusted Opening']).sum()
-            total_days = len(stock_data)
-            higher_percentage = (higher_count / total_days) * 100 if total_days > 0 else 0
-            lower_percentage = (lower_count / total_days) * 100 if total_days > 0 else 0
-            average_open_close_percentage = ((stock_data['Close'] / stock_data['Adjusted Opening'] - 1).mean()) * 100
+            higher_percentage = (higher_count / len(stock_data)) * 100 if len(stock_data) > 0 else 0
+            lower_percentage = (lower_count / len(stock_data)) * 100 if len(stock_data) > 0 else 0
+            avg_open_close_percentage = ((stock_data['Close'] / stock_data['Adjusted Opening'] - 1).mean()) * 100
 
             # Adiciona os resultados à lista
             performance_list.append({
@@ -35,12 +34,13 @@ def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
                 'Lower Count': lower_count,
                 'Higher Percentage': f"{higher_percentage:.2f}%",
                 'Lower Percentage': f"{lower_percentage:.2f}%",
-                'Avg Open-Close %': f"{average_open_close_percentage:.2f}%"
+                'Avg Open-Close %': f"{avg_open_close_percentage:.2f}%"
             })
         except Exception as e:
-            st.error(f"Erro ao processar {ticker}: {e}")
+            st.error(f"Falta de dados para {ticker}: {e}")
 
     return performance_list
+
 
 # Lista de tickers
 tickers = [
@@ -115,11 +115,10 @@ if st.button("Analisar"):
 
     if final_performance_results:
         performance_df = pd.DataFrame(final_performance_results)
-        performance_df.sort_values(by=['Ticker', 'Avg Open-Close %'], ascending=[True, False], inplace=True)
 
         # Filtros
         st.sidebar.title("Filtros")
-        num_best_stocks = st.sidebar.slider("Número de Melhores Ações", 1, 20, 5)
+        num_best_stocks = st.sidebar.slider("Número de Melhores Ações", 1, len(tickers_b3), 5)
         selected_ticker = st.sidebar.selectbox("Selecionar Ticker", tickers_b3)
         sort_by = st.sidebar.selectbox("Classificar por", performance_df.columns)
         ascending = st.sidebar.checkbox("Ordem Crescente", True)
@@ -144,4 +143,4 @@ if st.button("Analisar"):
 
     progress_bar.empty()
 
-st.write("Desenvolvido por [Seu Nome ou Organização]")
+st.write("Desenvolvido por Matheus Bertuci")
