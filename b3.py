@@ -4,30 +4,19 @@ import pandas as pd
 import numpy as np
 
 # Função para análise do desempenho das ações
-@st.cache  # Cache da função para evitar recálculos desnecessários
 def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
     performance_list = []
-
     for opening_drop_percentage in np.arange(opening_drop_range[0], opening_drop_range[1], 0.1):
         try:
-            # Carrega dados históricos da ação entre as datas especificadas
             stock_data = yf.download(ticker, start=start_date, end=end_date)
-
-            # Verifica se há dados suficientes para análise
             if stock_data.empty:
                 continue
-
-            # Calcula o preço de abertura ajustado pela porcentagem de queda
             stock_data['Adjusted Opening'] = stock_data['Close'].shift(1) * (1 - opening_drop_percentage / 100)
-
-            # Calcula métricas
             higher_count = (stock_data['Close'] > stock_data['Adjusted Opening']).sum()
             lower_count = (stock_data['Close'] < stock_data['Adjusted Opening']).sum()
             higher_percentage = (higher_count / len(stock_data)) * 100 if len(stock_data) > 0 else 0
             lower_percentage = (lower_count / len(stock_data)) * 100 if len(stock_data) > 0 else 0
             avg_open_close_percentage = ((stock_data['Close'] / stock_data['Adjusted Opening'] - 1).mean()) * 100
-
-            # Adiciona os resultados à lista
             performance_list.append({
                 'Ticker': ticker,
                 'Drop Percentage': f"{opening_drop_percentage:.1f}%",
@@ -39,7 +28,6 @@ def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
             })
         except Exception as e:
             st.error(f"Erro ao processar {ticker}: {e}")
-
     return performance_list
 
 # Lista de tickers
@@ -91,10 +79,8 @@ tickers = [
     "COCE6", "MGEL3", "CTSA8", "MMAQ4"
 ]
 
-# Adiciona o sufixo '.SA' necessário para o yfinance
 tickers_b3 = [ticker + ".SA" for ticker in tickers]
 
-# Interface do Streamlit
 st.title("Análise de Desempenho de Ações")
 
 start_date = st.date_input("Data de Início", value=pd.to_datetime("2023-12-01"))
@@ -103,33 +89,44 @@ opening_drop_start = st.number_input("Queda Inicial (%)", min_value=0.1, max_val
 opening_drop_end = st.number_input("Queda Final (%)", min_value=0.1, max_value=100.0, value=0.50, step=0.1)
 opening_drop_range = (opening_drop_start, opening_drop_end)
 
+# Inicialização do session_state
+if "final_performance_results" not in st.session_state:
+    st.session_state.final_performance_results = []
+
 if st.button("Analisar"):
-    final_performance_results = []
+    st.session_state.final_performance_results = []
     progress_bar = st.progress(0)
     total_tickers = len(tickers_b3)
-
     for i, ticker in enumerate(tickers_b3):
         ticker_performance = analyze_stock_performance(ticker, start_date, end_date, opening_drop_range)
-        final_performance_results.extend(ticker_performance)
+        st.session_state.final_performance_results.extend(ticker_performance)
         progress_bar.progress((i + 1) / total_tickers)
-
-    if final_performance_results:
-        performance_df = pd.DataFrame(final_performance_results)
-        
-        # Converter a coluna 'Avg Open-Close %' para tipo numérico
-        performance_df['Avg Open-Close %'] = performance_df['Avg Open-Close %'].str.rstrip('%').astype(float)
-        
-        # Filtros
-        st.write("Resultados:")
-        num_best_stocks = st.slider("Número de Melhores Ações", 1, len(tickers_b3), 5)
-        selected_ticker = st.selectbox("Selecione um Ticker", tickers_b3)
-        sort_by = st.selectbox("Classificar por", performance_df.columns, index=6)
-        ascending = st.checkbox("Ordem Crescente", False)
-
-        # Filtrar os resultados
-        filtered_df = performance_df[performance_df['Ticker'] == selected_ticker].sort_values(by=sort_by, ascending=ascending)
-        st.dataframe(filtered_df.head(num_best_stocks))
-    
     progress_bar.empty()
+
+if st.session_state.final_performance_results:
+    performance_df = pd.DataFrame(st.session_state.final_performance_results)
+    performance_df['Avg Open-Close %'] = performance_df['Avg Open-Close %'].str.rstrip('%').astype(float)
+
+    st.sidebar.title("Filtros")
+    num_best_stocks = st.sidebar.slider("Número de Melhores Ações", 1, len(tickers_b3), 5)
+    selected_ticker = st.sidebar.selectbox("Selecionar Ticker", tickers_b3)
+    sort_by = st.sidebar.selectbox("Classificar por", performance_df.columns)
+    ascending = st.sidebar.checkbox("Ordem Crescente", True)
+
+    if num_best_stocks > 0 and num_best_stocks <= len(performance_df):
+        best_stocks_df = performance_df.nlargest(num_best_stocks, 'Avg Open-Close %')
+        st.subheader(f"{num_best_stocks} Melhores Ações:")
+        st.dataframe(best_stocks_df)
+
+    selected_stock_df = performance_df[performance_df['Ticker'] == selected_ticker]
+    if selected_ticker:
+        st.subheader(f"Desempenho para {selected_ticker}:")
+        st.dataframe(selected_stock_df)
+
+    sorted_df = performance_df.sort_values(by=[sort_by], ascending=[ascending])
+    st.subheader(f"Classificado por {sort_by}:")
+    st.dataframe(sorted_df)
+else:
+    st.error("Nenhum dado foi retornado para os tickers selecionados.")
 
 st.write("Desenvolvido por [Seu Nome ou Organização]")
