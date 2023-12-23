@@ -27,7 +27,7 @@ def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
                 'Avg Open-Close %': f"{avg_open_close_percentage:.2f}%"
             })
         except Exception as e:
-            st.error(f"Erro ao processar {ticker}: {e}")
+            st.error(f"Falta de dados para: {ticker}: {e}")
     return performance_list
 
 # Lista de tickers
@@ -115,7 +115,7 @@ if st.session_state.final_performance_results:
 
     if num_best_stocks > 0 and num_best_stocks <= len(performance_df):
         best_stocks_df = performance_df.nlargest(num_best_stocks, 'Avg Open-Close %')
-        st.subheader(f"{num_best_stocks} Melhores Ações:")
+        st.subheader(f"{num_best_stocks} Ações com alta rentabilidade:")
         st.dataframe(best_stocks_df)
 
     selected_stock_df = performance_df[performance_df['Ticker'] == selected_ticker]
@@ -129,4 +129,4 @@ if st.session_state.final_performance_results:
 else:
     st.error("Nenhum dado foi retornado para os tickers selecionados.")
 
-st.write("Desenvolvido por [Seu Nome ou Organização]")
+st.write("Desenvolvido por Matheus Bertuci")
