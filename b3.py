@@ -51,8 +51,9 @@ def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
 # Tela principal com análise de desempenho das ações
 def tela_principal():
     st.title("Análise de Desempenho de Ações")
-# Lista de tickers
-tickers = [
+    
+    # Lista de tickers
+    tickers = [
     "MGLU3", "HAPV3", "AMER3", "ABEV3", "PETR4", "BBDC4", "B3SA3", "RAIZ4", "ITUB4", "PETZ3", "VALE3", "CIEL3",
     "ITSA4", "CMIG4", "SEQL3", "COGN3", "EMBR3", "CPLE6", "AZUL4", "SOMA3", "RAIL3", "EQTL3", "GGBR4", "GOAU4",
     "CVCB3", "VBBR3", "LREN3", "PETR3", "CRFB3", "BBDC3", "JBSS3", "PDGR3", "BRFS3", "BEEF3", "GOLL4", "BRKM5",
@@ -98,9 +99,8 @@ tickers = [
     "BTOW3", "LINX3", "BTTL3", "GPCP3", "GPCP4", "SMLS3", "MMXM3", "BSEV3", "CNTO3", "TIET4", "TIET3", "CORR4",
     "CEPE3", "CALI4", "SNSY6", "CASN4", "EMAE3", "BPAR3", "APTI4", "VSPT3", "MTIG3", "FIGE4", "LUXM3", "TKNO3",
     "COCE6", "MGEL3", "CTSA8", "MMAQ4"
-]
-
-tickers_b3 = [ticker + ".SA" for ticker in tickers]
+] # Complete com a lista de tickers completa
+    tickers_b3 = [ticker + ".SA" for ticker in tickers]
 
     start_date = st.date_input("Data de Início", value=pd.to_datetime("2023-12-01"))
     end_date = st.date_input("Data de Fim", value=pd.to_datetime("2023-12-21"))
@@ -139,3 +139,4 @@ else:
     tela_login()
 
 st.write("Desenvolvido por Matheus Bertuci")
+
