@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 # Exemplo de armazenamento de usuários (não use em produção)
-usuarios = {"admin": "admin123", "user": "senha321"}
+usuarios = {"admin": "senha123", "user": "senha321"}
 
 # Função para verificar as credenciais
 def verificar_credenciais(username, password):
@@ -111,13 +111,14 @@ def tela_principal():
     if st.button("Analisar"):
         st.session_state.final_performance_results = []
         progress_bar = st.progress(0)
+        status_text = st.empty()
         total_tickers = len(tickers_b3)
         for i, ticker in enumerate(tickers_b3):
             ticker_performance = analyze_stock_performance(ticker, start_date, end_date, opening_drop_range)
             st.session_state.final_performance_results.extend(ticker_performance)
             progress = (i + 1) / total_tickers
             progress_bar.progress(progress)
-            st.text(f"Progresso: {progress * 100:.2f}%")
+            status_text.text(f"Progresso: {progress * 100:.2f}%")
         progress_bar.empty()
 
     if 'final_performance_results' in st.session_state and st.session_state.final_performance_results:
@@ -139,4 +140,3 @@ else:
     tela_login()
 
 st.write("Desenvolvido por Matheus Bertuci")
-
