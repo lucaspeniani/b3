@@ -37,7 +37,7 @@ def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
                 'Avg Open-Close %': f"{avg_open_close_percentage:.2f}%"
             })
         except Exception as e:
-            st.error(f"Erro ao processar {ticker}: {e}")
+            st.error(f"Falta de dados para: {ticker}: {e}")
 
     return performance_list
 
@@ -148,4 +148,4 @@ if st.button("Analisar"):
 
     progress_bar.empty()
 
-st.write("Desenvolvido por [Seu Nome ou Organização]")
+st.write("Desenvolvido por Matheus Bertuci")
