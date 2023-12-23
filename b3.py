@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 
 # Função para análise do desempenho das ações
-@st.cache
 def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
     performance_list = []
 
