@@ -27,7 +27,7 @@ def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
                 'Avg Open-Close %': f"{avg_open_close_percentage:.2f}%"
             })
         except Exception as e:
-            st.error(f"Falta de dados para: {ticker}: {e}")
+            st.error(f"Erro ao processar {ticker}: {e}")
     return performance_list
 
 # Lista de tickers
@@ -96,12 +96,18 @@ if "final_performance_results" not in st.session_state:
 if st.button("Analisar"):
     st.session_state.final_performance_results = []
     progress_bar = st.progress(0)
+    progress_text = st.empty()  # Espaço vazio para o texto de progresso
     total_tickers = len(tickers_b3)
+
     for i, ticker in enumerate(tickers_b3):
         ticker_performance = analyze_stock_performance(ticker, start_date, end_date, opening_drop_range)
         st.session_state.final_performance_results.extend(ticker_performance)
-        progress_bar.progress((i + 1) / total_tickers)
+        progress = (i + 1) / total_tickers
+        progress_bar.progress(progress)
+        progress_text.text(f"Progresso: {progress * 100:.2f}%")  # Atualiza o texto com a porcentagem
+
     progress_bar.empty()
+    progress_text.empty()  # Limpa o texto de progresso após a conclusão
 
 if st.session_state.final_performance_results:
     performance_df = pd.DataFrame(st.session_state.final_performance_results)
@@ -115,7 +121,7 @@ if st.session_state.final_performance_results:
 
     if num_best_stocks > 0 and num_best_stocks <= len(performance_df):
         best_stocks_df = performance_df.nlargest(num_best_stocks, 'Avg Open-Close %')
-        st.subheader(f"{num_best_stocks} Ações Classificadas com Rentabilidade:")
+        st.subheader(f"{num_best_stocks} Melhores Ações:")
         st.dataframe(best_stocks_df)
 
     selected_stock_df = performance_df[performance_df['Ticker'] == selected_ticker]
@@ -129,4 +135,4 @@ if st.session_state.final_performance_results:
 else:
     st.error("Nenhum dado foi retornado para os tickers selecionados.")
 
-st.write("Desenvolvido por Matheus Bertuci")
+st.write("Desenvolvido por [Seu Nome ou Organização]")
