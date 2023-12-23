@@ -111,7 +111,7 @@ tickers = [
     "COCE6", "MGEL3", "CTSA8", "MMAQ4"
 ]
 
-    tickers_b3 = [ticker + ".SA" for ticker in tickers]
+tickers_b3 = [ticker + ".SA" for ticker in tickers]
 
     if "final_performance_results" not in st.session_state:
         st.session_state.final_performance_results = []
