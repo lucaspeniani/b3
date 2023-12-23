@@ -116,6 +116,9 @@ if st.button("Analisar"):
     if final_performance_results:
         performance_df = pd.DataFrame(final_performance_results)
 
+        # Converter a coluna 'Avg Open-Close %' para tipo numérico
+        performance_df['Avg Open-Close %'] = performance_df['Avg Open-Close %'].str.rstrip('%').astype(float)
+
         # Filtros
         st.sidebar.title("Filtros")
         num_best_stocks = st.sidebar.slider("Número de Melhores Ações", 1, len(tickers_b3), 5)
