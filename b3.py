@@ -115,7 +115,7 @@ if st.session_state.final_performance_results:
 
     if num_best_stocks > 0 and num_best_stocks <= len(performance_df):
         best_stocks_df = performance_df.nlargest(num_best_stocks, 'Avg Open-Close %')
-        st.subheader(f"{num_best_stocks} Ações com alta rentabilidade:")
+        st.subheader(f"{num_best_stocks} Ações com alta Rentabilidade:")
         st.dataframe(best_stocks_df)
 
     selected_stock_df = performance_df[performance_df['Ticker'] == selected_ticker]
