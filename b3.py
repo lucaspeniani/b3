@@ -5,7 +5,7 @@ import numpy as np
 
 # Simulando um banco de dados de usuários (em produção, use um banco de dados real)
 usuarios = {
-    "usuario1": "senha1",
+    "admin ": "admin",
     "usuario2": "senha2"
 }
 
