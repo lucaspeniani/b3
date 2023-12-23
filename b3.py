@@ -96,11 +96,16 @@ if "final_performance_results" not in st.session_state:
 if st.button("Analisar"):
     st.session_state.final_performance_results = []
     progress_bar = st.progress(0)
+    progress_text = st.caption("0% Completo")  # Elemento de texto para a porcentagem
     total_tickers = len(tickers_b3)
+
     for i, ticker in enumerate(tickers_b3):
         ticker_performance = analyze_stock_performance(ticker, start_date, end_date, opening_drop_range)
         st.session_state.final_performance_results.extend(ticker_performance)
-        progress_bar.progress((i + 1) / total_tickers)
+        progress = (i + 1) / total_tickers
+        progress_bar.progress(progress)
+        progress_text.caption(f"{progress * 100:.0f}% Completo")  # Atualizando a porcentagem
+
     progress_bar.empty()
 
 if st.session_state.final_performance_results:
