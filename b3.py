@@ -2,8 +2,6 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import numpy as np
-import xgboost as xgb
-from sklearn.model_selection import train_test_split
 
 # Função para análise do desempenho das ações
 def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
@@ -29,7 +27,7 @@ def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
                 'Avg Open-Close %': f"{avg_open_close_percentage:.2f}%"
             })
         except Exception as e:
-            st.error(f"Erro ao processar {ticker}: {e}")
+            st.error(f"Falta de dados para: {ticker}: {e}")
     return performance_list
 
 # Lista de tickers
@@ -81,14 +79,12 @@ tickers = [
     "COCE6", "MGEL3", "CTSA8", "MMAQ4"
 ]
 
-# Adiciona o sufixo '.SA' necessário para o yfinance (se aplicável)
 tickers_b3 = [ticker + ".SA" for ticker in tickers]
 
-# Interface do Streamlit
 st.title("Análise de Desempenho de Ações")
 
-start_date = st.date_input("Data de Início", value=pd.to_datetime("2022-01-01"))
-end_date = st.date_input("Data de Fim", value=pd.to_datetime("2022-12-31"))
+start_date = st.date_input("Data de Início", value=pd.to_datetime("2023-12-01"))
+end_date = st.date_input("Data de Fim", value=pd.to_datetime("2023-12-21"))
 opening_drop_start = st.number_input("Queda Inicial (%)", min_value=0.1, max_value=100.0, value=0.10, step=0.1)
 opening_drop_end = st.number_input("Queda Final (%)", min_value=0.1, max_value=100.0, value=0.50, step=0.1)
 opening_drop_range = (opening_drop_start, opening_drop_end)
@@ -97,52 +93,40 @@ opening_drop_range = (opening_drop_start, opening_drop_end)
 if "final_performance_results" not in st.session_state:
     st.session_state.final_performance_results = []
 
-# Botão para executar a análise
 if st.button("Analisar"):
     st.session_state.final_performance_results = []
-    for ticker in tickers_b3:
+    progress_bar = st.progress(0)
+    total_tickers = len(tickers_b3)
+    for i, ticker in enumerate(tickers_b3):
         ticker_performance = analyze_stock_performance(ticker, start_date, end_date, opening_drop_range)
         st.session_state.final_performance_results.extend(ticker_performance)
+        progress_bar.progress((i + 1) / total_tickers)
+    progress_bar.empty()
 
-# Exibindo os resultados da análise
 if st.session_state.final_performance_results:
     performance_df = pd.DataFrame(st.session_state.final_performance_results)
-    st.write(performance_df)
+    performance_df['Avg Open-Close %'] = performance_df['Avg Open-Close %'].str.rstrip('%').astype(float)
 
-    # Função para treinar e fazer previsões com o modelo XGBoost
-    def train_predict_xgboost(df, feature_cols, target_col):
-        # Garantir que todos os valores sejam numéricos e tratar valores ausentes
-        df = df.dropna()
-        df[feature_cols] = df[feature_cols].apply(pd.to_numeric, errors='coerce')
-        df[target_col] = df[target_col].apply(pd.to_numeric, errors='coerce')
+    st.sidebar.title("Filtros")
+    num_best_stocks = st.sidebar.slider("Número de Melhores Ações", 1, len(tickers_b3), 5)
+    selected_ticker = st.sidebar.selectbox("Selecionar Ticker", tickers_b3)
+    sort_by = st.sidebar.selectbox("Classificar por", performance_df.columns)
+    ascending = st.sidebar.checkbox("Ordem Crescente", True)
 
-        X = df[feature_cols]
-        y = df[target_col]
+    if num_best_stocks > 0 and num_best_stocks <= len(performance_df):
+        best_stocks_df = performance_df.nlargest(num_best_stocks, 'Avg Open-Close %')
+        st.subheader(f"{num_best_stocks} Ações Classificadas com Rentabilidade:")
+        st.dataframe(best_stocks_df)
 
-        # Dividindo os dados em conjunto de treino e teste
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    selected_stock_df = performance_df[performance_df['Ticker'] == selected_ticker]
+    if selected_ticker:
+        st.subheader(f"Desempenho para {selected_ticker}:")
+        st.dataframe(selected_stock_df)
 
-        # Treinando o modelo XGBoost
-        model = xgb.XGBRegressor(objective ='reg:squarederror', colsample_bytree = 0.3, learning_rate = 0.1,
-                    max_depth = 5, alpha = 10, n_estimators = 10)
-        model.fit(X_train, y_train)
+    sorted_df = performance_df.sort_values(by=[sort_by], ascending=[ascending])
+    st.subheader(f"Classificado por {sort_by}:")
+    st.dataframe(sorted_df)
+else:
+    st.error("Nenhum dado foi retornado para os tickers selecionados.")
 
-        # Fazendo previsões
-        y_pred = model.predict(X_test)
-        return y_pred, y_test
-
-    # Defina as características (features) que você quer usar
-    feature_cols = ['Drop Percentage', 'Higher Count', 'Lower Count', 'Higher Percentage', 'Lower Percentage', 'Avg Open-Close %']
-
-    # Botão para executar as previsões
-    if st.button("Fazer Previsões com XGBoost"):
-        target_cols = ['Higher Count', 'Lower Count', 'Higher Percentage', 'Lower Percentage', 'Avg Open-Close %']
-
-        for target_col in target_cols:
-            pred, test = train_predict_xgboost(performance_df, feature_cols, target_col)
-            st.write(f"Previsões para {target_col}:")
-            st.write(pred)
-            st.write("Valores reais:")
-            st.write(test)
-
-st.write("Desenvolvido por [Seu Nome ou Organização]")
+st.write("Desenvolvido por Matheus Bertuci")
