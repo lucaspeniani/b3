@@ -37,7 +37,7 @@ def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
                 'Avg Open-Close %': f"{avg_open_close_percentage:.2f}%"
             })
         except Exception as e:
-            st.error(f"Falta de dados para {ticker}: {e}")
+            st.error(f"Erro ao processar {ticker}: {e}")
 
     return performance_list
 
@@ -124,17 +124,19 @@ if st.button("Analisar"):
         ascending = st.sidebar.checkbox("Ordem Crescente", True)
 
         # Aplicar filtros
-        best_stocks_df = performance_df.nlargest(num_best_stocks, 'Avg Open-Close %')
-        selected_stock_df = performance_df[performance_df['Ticker'] == selected_ticker]
-        sorted_df = performance_df.sort_values(by=[sort_by], ascending=[ascending])
-
-        # Exibir tabela com base nos filtros
-        if num_best_stocks > 0:
+        if num_best_stocks > 0 and num_best_stocks <= len(performance_df):
+            best_stocks_df = performance_df.nlargest(num_best_stocks, 'Avg Open-Close %')
             st.subheader(f"{num_best_stocks} Melhores Ações:")
             st.dataframe(best_stocks_df)
+        else:
+            st.warning("Por favor, selecione um número válido de melhores ações.")
+
+        selected_stock_df = performance_df[performance_df['Ticker'] == selected_ticker]
         if selected_ticker:
             st.subheader(f"Desempenho para {selected_ticker}:")
             st.dataframe(selected_stock_df)
+
+        sorted_df = performance_df.sort_values(by=[sort_by], ascending=[ascending])
         st.subheader(f"Classificado por {sort_by}:")
         st.dataframe(sorted_df)
 
@@ -143,4 +145,4 @@ if st.button("Analisar"):
 
     progress_bar.empty()
 
-st.write("Desenvolvido por Matheus Bertuci")
+st.write("Desenvolvido por [Seu Nome ou Organização]")
