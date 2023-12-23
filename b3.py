@@ -3,23 +3,27 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 
-# Exemplo de armazenamento de usuários (não use em produção)
-usuarios = {"admin": "senha123", "user": "senha321"}
+# Simulando um banco de dados de usuários (em produção, use um banco de dados real)
+usuarios = {
+    "usuario1": "senha1",
+    "usuario2": "senha2"
+}
 
-# Função para verificar as credenciais
-def verificar_credenciais(username, password):
-    return usuarios.get(username) == password
+def verificar_credenciais(usuario, senha):
+    """Verifica se as credenciais estão corretas."""
+    return usuario in usuarios and usuarios[usuario] == senha
 
-# Tela de login
-def tela_login():
+# Página de Login
+def mostrar_pagina_login():
     st.title("Login")
-    username = st.text_input("Nome de usuário")
-    password = st.text_input("Senha", type="password")
-    if st.button("Entrar"):
-        if verificar_credenciais(username, password):
-            st.session_state.logado = True
+    usuario = st.sidebar.text_input("Usuário")
+    senha = st.sidebar.text_input("Senha", type="password")
+
+    if st.sidebar.button("Login"):
+        if verificar_credenciais(usuario, senha):
+            st.session_state['autenticado'] = True
         else:
-            st.error("Usuário ou senha incorretos")
+            st.error("Usuário ou senha incorretos.")
 
 # Função para análise do desempenho das ações
 def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
@@ -48,9 +52,15 @@ def analyze_stock_performance(ticker, start_date, end_date, opening_drop_range):
             st.error(f"Falta de dados para: {ticker}: {e}")
     return performance_list
 
-# Tela principal com análise de desempenho das ações
-def tela_principal():
+# Página principal com análise de desempenho das ações
+def mostrar_pagina_principal():
     st.title("Análise de Desempenho de Ações")
+
+    start_date = st.date_input("Data de Início", value=pd.to_datetime("2023-12-01"))
+    end_date = st.date_input("Data de Fim", value=pd.to_datetime("2023-12-21"))
+    opening_drop_start = st.number_input("Queda Inicial (%)", min_value=0.1, max_value=100.0, value=0.10, step=0.1)
+    opening_drop_end = st.number_input("Queda Final (%)", min_value=0.1, max_value=100.0, value=0.50, step=0.1)
+    opening_drop_range = (opening_drop_start, opening_drop_end)
     
     # Lista de tickers
     tickers = [
@@ -102,41 +112,55 @@ def tela_principal():
 ] # Complete com a lista de tickers completa
     tickers_b3 = [ticker + ".SA" for ticker in tickers]
 
-    start_date = st.date_input("Data de Início", value=pd.to_datetime("2023-12-01"))
-    end_date = st.date_input("Data de Fim", value=pd.to_datetime("2023-12-21"))
-    opening_drop_start = st.number_input("Queda Inicial (%)", min_value=0.1, max_value=100.0, value=0.10, step=0.1)
-    opening_drop_end = st.number_input("Queda Final (%)", min_value=0.1, max_value=100.0, value=0.50, step=0.1)
-    opening_drop_range = (opening_drop_start, opening_drop_end)
+    if "final_performance_results" not in st.session_state:
+        st.session_state.final_performance_results = []
 
     if st.button("Analisar"):
         st.session_state.final_performance_results = []
         progress_bar = st.progress(0)
-        status_text = st.empty()
+        progress_text = st.caption("0% Completo")  # Elemento de texto para a porcentagem
         total_tickers = len(tickers_b3)
+
         for i, ticker in enumerate(tickers_b3):
             ticker_performance = analyze_stock_performance(ticker, start_date, end_date, opening_drop_range)
             st.session_state.final_performance_results.extend(ticker_performance)
             progress = (i + 1) / total_tickers
             progress_bar.progress(progress)
-            status_text.text(f"Progresso: {progress * 100:.2f}%")
+            progress_text.caption(f"{progress * 100:.0f}% Completo")  # Atualizando a porcentagem
+
         progress_bar.empty()
 
-    if 'final_performance_results' in st.session_state and st.session_state.final_performance_results:
+    if st.session_state.final_performance_results:
         performance_df = pd.DataFrame(st.session_state.final_performance_results)
         performance_df['Avg Open-Close %'] = performance_df['Avg Open-Close %'].str.rstrip('%').astype(float)
-        st.subheader("Resultados da Análise")
-        st.dataframe(performance_df)
+
+        st.sidebar.title("Filtros")
+        num_best_stocks = st.sidebar.slider("Número de Melhores Ações", 1, len(tickers_b3), 5)
+        selected_ticker = st.sidebar.selectbox("Selecionar Ticker", tickers_b3)
+        sort_by = st.sidebar.selectbox("Classificar por", performance_df.columns)
+        ascending = st.sidebar.checkbox("Ordem Crescente", True)
+
+        if num_best_stocks > 0 and num_best_stocks <= len(performance_df):
+            best_stocks_df = performance_df.nlargest(num_best_stocks, 'Avg Open-Close %')
+            st.subheader(f"{num_best_stocks} Ações Classificadas com Rentabilidade:")
+            st.dataframe(best_stocks_df)
+
+        selected_stock_df = performance_df[performance_df['Ticker'] == selected_ticker]
+        if selected_ticker:
+            st.subheader(f"Desempenho para {selected_ticker}:")
+            st.dataframe(selected_stock_df)
+
+        sorted_df = performance_df.sort_values(by=[sort_by], ascending=[ascending])
+        st.subheader(f"Classificado por {sort_by}:")
+        st.dataframe(sorted_df)
     else:
         st.error("Nenhum dado foi retornado para os tickers selecionados.")
 
-# Inicialização do session_state
-if 'logado' not in st.session_state:
-    st.session_state.logado = False
+# Verificando se o usuário está autenticado
+if 'autenticado' not in st.session_state:
+    st.session_state['autenticado'] = False
 
-# Controle de acesso
-if st.session_state.logado:
-    tela_principal()
+if st.session_state['autenticado']:
+    mostrar_pagina_principal()
 else:
-    tela_login()
-
-st.write("Desenvolvido por Matheus Bertuci")
+    mostrar_pagina_login()
