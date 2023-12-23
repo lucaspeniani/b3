@@ -109,8 +109,6 @@ if 'opening_drop_end' not in st.session_state:
     st.session_state.opening_drop_end = 0.50
 if 'num_best_stocks' not in st.session_state:
     st.session_state.num_best_stocks = 5
-if 'selected_ticker' not in st.session_state:
-    st.session_state.selected_ticker = tickers_b3[0]
 if 'sort_by' not in st.session_state:
     st.session_state.sort_by = 'Avg Open-Close %'
 if 'ascending' not in st.session_state:
@@ -141,29 +139,25 @@ if st.button("Analisar"):
         # Filtros
         st.sidebar.title("Filtros")
         num_best_stocks = st.sidebar.slider("Número de Melhores Ações", 1, len(tickers_b3), st.session_state.num_best_stocks)
-        selected_ticker = st.sidebar.selectbox("Selecionar Ticker", tickers_b3, index=tickers_b3.index(st.session_state.selected_ticker))
-        sort_by = st.sidebar.selectbox("Classificar por", performance_df.columns, index=performance_df.columns.get_loc(st.session_state.sort_by))
+        selected_ticker = st.sidebar.selectbox("Selecione um Ticker", tickers_b3)
+        sort_by = st.sidebar.selectbox("Classificar por", performance_df.columns, index=6)
         ascending = st.sidebar.checkbox("Ordem Crescente", st.session_state.ascending)
 
-        # Atualize o estado dos filtros
-        st.session_state.start_date = start_date
-        st.session_state.end_date = end_date
-        st.session_state.opening_drop_start = opening_drop_start
-        st.session_state.opening_drop_end = opening_drop_end
+        # Atualizar o estado dos filtros na sessão
         st.session_state.num_best_stocks = num_best_stocks
         st.session_state.selected_ticker = selected_ticker
         st.session_state.sort_by = sort_by
         st.session_state.ascending = ascending
 
-        # Aplicar filtros
-        if num_best_stocks > 0 and num_best_stocks <= len(performance_df):
+        # Aplicar filtros e classificação
+        if num_best_stocks <= len(performance_df):
             sorted_df = performance_df[performance_df['Ticker'] == selected_ticker].nlargest(num_best_stocks, 'Avg Open-Close %', keep='all')
             sorted_df = sorted_df.sort_values(by=sort_by, ascending=ascending)
             st.write(f"Top {num_best_stocks} Ações para {selected_ticker} Classificado por {sort_by}:")
             st.dataframe(sorted_df)
 
-    else:
-        st.error("Nenhum dado foi retornado para os tickers selecionados.")
+        else:
+            st.error("Nenhum dado foi retornado para os tickers selecionados.")
 
     progress_bar.empty()
 
