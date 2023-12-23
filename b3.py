@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 # Exemplo de armazenamento de usuários (não use em produção)
-usuarios = {"admin": "senha123", "user": "senha321"}
+usuarios = {"admin": "admin123", "user": "senha321"}
 
 # Função para verificar as credenciais
 def verificar_credenciais(username, password):
