@@ -5,7 +5,7 @@ import numpy as np
 
 # Simulando um banco de dados de usuários (em produção, use um banco de dados real)
 usuarios = {
-    "admin": "admin",
+    "usuario1": "senha1",
     "usuario2": "senha2"
 }
 
@@ -62,8 +62,8 @@ def mostrar_pagina_principal():
     opening_drop_end = st.number_input("Queda Final (%)", min_value=0.1, max_value=100.0, value=0.50, step=0.1)
     opening_drop_range = (opening_drop_start, opening_drop_end)
 
-# Lista de tickers
-tickers = [
+    # Lista de tickers
+    tickers = [
     "MGLU3", "HAPV3", "AMER3", "ABEV3", "PETR4", "BBDC4", "B3SA3", "RAIZ4", "ITUB4", "PETZ3", "VALE3", "CIEL3",
     "ITSA4", "CMIG4", "SEQL3", "COGN3", "EMBR3", "CPLE6", "AZUL4", "SOMA3", "RAIL3", "EQTL3", "GGBR4", "GOAU4",
     "CVCB3", "VBBR3", "LREN3", "PETR3", "CRFB3", "BBDC3", "JBSS3", "PDGR3", "BRFS3", "BEEF3", "GOLL4", "BRKM5",
@@ -110,7 +110,6 @@ tickers = [
     "CEPE3", "CALI4", "SNSY6", "CASN4", "EMAE3", "BPAR3", "APTI4", "VSPT3", "MTIG3", "FIGE4", "LUXM3", "TKNO3",
     "COCE6", "MGEL3", "CTSA8", "MMAQ4"
 ]
-
 
     tickers_b3 = [ticker + ".SA" for ticker in tickers]
 
@@ -166,3 +165,4 @@ if st.session_state['autenticado']:
     mostrar_pagina_principal()
 else:
     mostrar_pagina_login()
+
