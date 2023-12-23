@@ -111,6 +111,11 @@ if st.session_state.final_performance_results:
 
     # Função para treinar e fazer previsões com o modelo XGBoost
     def train_predict_xgboost(df, feature_cols, target_col):
+        # Garantir que todos os valores sejam numéricos e tratar valores ausentes
+        df = df.dropna()
+        df[feature_cols] = df[feature_cols].apply(pd.to_numeric, errors='coerce')
+        df[target_col] = df[target_col].apply(pd.to_numeric, errors='coerce')
+
         X = df[feature_cols]
         y = df[target_col]
 
