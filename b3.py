@@ -62,7 +62,7 @@ def mostrar_pagina_principal():
     opening_drop_end = st.number_input("Queda Final (%)", min_value=0.1, max_value=100.0, value=0.50, step=0.1)
     opening_drop_range = (opening_drop_start, opening_drop_end)
             # Lista de tickers
-        tickers = [
+     tickers = [
             "MGLU3", "HAPV3", "AMER3", "ABEV3", "PETR4", "BBDC4", "B3SA3", "RAIZ4", "ITUB4", "PETZ3", "VALE3", "CIEL3",
             "ITSA4", "CMIG4", "SEQL3", "COGN3", "EMBR3", "CPLE6", "AZUL4", "SOMA3", "RAIL3", "EQTL3", "GGBR4", "GOAU4",
             "CVCB3", "VBBR3", "LREN3", "PETR3", "CRFB3", "BBDC3", "JBSS3", "PDGR3", "BRFS3", "BEEF3", "GOLL4", "BRKM5",
